@@ -385,14 +385,10 @@ def _get_bin_edges(a, bins, range, weights, symlog=None):
     bin_edges = None
     if symlog:
         if np.ndim(bins) != 0:
-            warnings.warn(
-                "symlog option is only valid when bins is an integer. "
-                "Attempting without symlog.",
-                stacklevel=2
+            raise TypeError(
+                "The `symlog` option is only valid when `bins` is an integer."
             )
-            return _get_bin_edges(a, bins, range, weights, symlog=None)
-        n_unequal_bins = bins
-        bin_edges = _get_geomspace_edges(n_unequal_bins, a)
+        bin_edges = _get_geomspace_edges(a, bins)
         return bin_edges, None
 
     if isinstance(bins, str):
@@ -464,12 +460,11 @@ def _get_bin_edges(a, bins, range, weights, symlog=None):
         return bin_edges, None
 
 
-def _get_geomspace_edges(n_unequal_bins, a):
+def _get_geomspace_edges(a, n_unequal_bins):
     """
     Compute the bin edges for a histogram with geometrically spaced bins.
     The bins are spaced such that the width of each bin is constant in
     log-space.
-    Reference issue: https://github.com/numpy/numpy/issues/24368
     Returns
     -------
     bin_edges : ndarray
@@ -477,7 +472,8 @@ def _get_geomspace_edges(n_unequal_bins, a):
     """
     # The idea is to use the absolute min and max of the data to compute the
     # range, and then the pseudo-first and last edge.
-    pseudo_first_edge, pseudo_last_edge = abs(a).min(), abs(a).max()
+    abs_a = abs(a)
+    pseudo_first_edge, pseudo_last_edge = abs_a.min(), abs_a.max()
     # Compute the edges of the bins.
     num_bins = int(n_unequal_bins)
     if n_unequal_bins % 2 == 0:
@@ -767,7 +763,6 @@ def histogram(a, bins=10, range=None, density=None, weights=None, symlog=None):
     symlog : bool, optional
         Allow numpy.histogram to give geometrically spaced bin edges.
         Data can include both negative and positive numbers.
-        Based on https://github.com/numpy/numpy/issues/24368.
 
     Returns
     -------
